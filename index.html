@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>日本時間 → アメリカ時間</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --bg-color: #eef3f7;
+      --card-bg-color: #ffffff;
+      --text-color: #333;
+      --heading-color: #1a2c47;
+      --label-color: #555;
+      --border-color: #ccc;
+      --shadow-color: rgba(0,0,0,0.08);
+      --focus-ring-color: #f7a600;
+
+      --card-morning-bg: #eaf5fc;
+      --card-day-bg: #fef9e7;
+      --card-evening-bg: #fbeee4;
+      --card-night-bg: #e8ebed;
+    }
+
+    body.dark-mode {
+      --bg-color: #1a232c;
+      --card-bg-color: #313e4e;
+      --text-color: #f1f5f9;
+      --heading-color: #ffffff;
+      --label-color: #a0aec0;
+      --border-color: #4a5568;
+      --shadow-color: rgba(0,0,0,0.2);
+
+      --card-morning-bg: #2a435c;
+      --card-day-bg: #5c5336;
+      --card-evening-bg: #63402d;
+      --card-night-bg: #353f4b;
+    }
+
+    body {
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-color);
+      margin: 12px;
+      color: var(--text-color);
+      line-height: 1.6;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--heading-color);
+    }
+
+    /* 入力エリア */
+    #inputCard {
+      border-left: 6px solid #f7a600;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 0 auto 20px auto;
+      max-width: 520px;
+      box-shadow: 0 6px 16px var(--shadow-color);
+      transition: background-color 0.3s ease;
+    }
+    .input-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--label-color);
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .controls-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .input-wrapper {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #japanInput {
+      padding: 10px;
+      font-size: 1rem;
+      width: 100%;
+      border: 1px solid var(--border-color);
+      background-color: var(--card-bg-color);
+      color: var(--text-color);
+      border-radius: 8px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #japanInput:focus {
+      outline: none;
+      border-color: var(--focus-ring-color);
+      box-shadow: 0 0 0 3px rgba(247, 166, 0, 0.3);
+    }
+    #nowBtn {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 0;
+      background: #f7a600;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      white-space: nowrap;
+    }
+    #nowBtn:hover {
+      background: #e09500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    /* 言語タブ & ダークモードスイッチ */
+    .lang-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .lang-btn {
+      padding: 6px 12px; /* アイコンに合わせてパディングを調整 */
+      border: none;
+      background: var(--card-bg-color);
+      color: var(--text-color);
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: background 0.3s ease, color 0.3s ease;
+      line-height: 1; /* 行の高さを調整 */
+    }
+    .lang-btn:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+    body.dark-mode .lang-btn:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+    .lang-btn:not(:last-child) {
+      border-right: 1px solid var(--border-color);
+    }
+    .lang-btn.active {
+      background: #1a2c47;
+      color: #fff;
+    }
+    body.dark-mode .lang-btn.active {
+      background: #4a5568;
+    }
+    
+    /* NEW: 国旗アイコンのスタイル */
+    .flag-icon {
+        width: 28px;
+        height: auto;
+        vertical-align: middle; /* ボタン内でアイコンが中央にくるように */
+        pointer-events: none; /* クリック操作がボタンに伝わるように */
+    }
+
+    #theme-btn {
+      padding: 4px 8px;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg-color);
+      color: var(--text-color);
+      cursor: pointer;
+      font-size: 1.1rem;
+      border-radius: 6px;
+      line-height: 1.2;
+      transition: background 0.3s ease, color 0.3s ease, transform 0.2s;
+    }
+    #theme-btn:hover {
+      transform: scale(1.1);
+    }
+
+
+    /* カード */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      max-width: 980px;
+      margin: 0 auto 30px auto;
+    }
+    .card {
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 6px 16px var(--shadow-color);
+      text-align: center;
+      background: var(--card-bg-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 80px;
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    .city {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #fff;
+      background-color: #4A5568;
+      padding: 4px 12px;
+      border-radius: 16px;
+      display: inline-block;
+    }
+    .time-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .time-icon {
+        font-size: 1.6rem;
+    }
+    .localtime {
+      font-size: 1.6rem;
+      font-weight: bold;
+      line-height: 1.2;
+    }
+    .diff {
+      font-size: 0.9rem;
+      color: var(--label-color);
+    }
+    .dst-indicator {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #854d0e;
+      background-color: #fef08a;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    body.dark-mode .dst-indicator {
+      color: #fef08a;
+      background-color: #854d0e;
+    }
+
+
+    /* 時間帯背景 */
+    .card-morning { background-color: var(--card-morning-bg); }
+    .card-day     { background-color: var(--card-day-bg); }
+    .card-evening { background-color: var(--card-evening-bg); }
+    .card-night   { background-color: var(--card-night-bg); }
+
+    .time-morning { color: #2980b9; }
+    .time-day     { color: #b88a0b; }
+    .time-evening { color: #d35400; }
+    .time-night   { color: #2c3e50; }
+    
+    body.dark-mode .time-morning { color: #5dade2; }
+    body.dark-mode .time-day     { color: #f5cba7; }
+    body.dark-mode .time-evening { color: #e59866; }
+    body.dark-mode .time-night   { color: #aeb6bf; }
+
+  </style>
+</head>
+<body>
+  <h2 id="pageTitle">日本時間 → アメリカ時間</h2>
+
+  <div id="inputCard">
+    <div class="input-header">
+      <label for="japanInput">日本時間を入力：</label>
+      <div class="controls-wrapper">
+        <div class="lang-toggle">
+          <button type="button" id="btn-ja" class="lang-btn" title="日本語">
+            <img class="flag-icon" alt="Japanese Flag" src='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"><rect fill="%23fff" width="900" height="600"/><circle fill="%23bc002d" cx="450" cy="300" r="180"/></svg>'>
+          </button>
+          <button type="button" id="btn-en" class="lang-btn" title="English">
+            <img class="flag-icon" alt="US Flag" src='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1235 650"><path fill="%23b22234" d="M0 0h1235v650H0z"/><path fill="%23fff" d="M0 65h1235v65H0zm0 130h1235v65H0zm0 130h1235v65H0zm0 130h1235v65H0z"/><path fill="%233c3b6e" d="M0 0h617.5v390H0z"/><g fill="%23fff"><g id="s18"><g id="s9"><g id="s5"><g id="s4"><path id="s" d="M115 125l24.9-80.9L164.8 125h-99.6z"/><use href="%23s" x="92.6"/><use href="%23s" x="185.2"/><use href="%23s" x="277.8"/></g><use href="%23s4" x="46.3"/></g><use href="%23s9" y="78"/></g><use href="%23s18" y="156"/></g><use href="%23s5" x="370.4"/></g></svg>'>
+          </button>
+        </div>
+        <button type="button" id="theme-btn">🌙</button>
+      </div>
+    </div>
+
+    <div class="input-wrapper">
+      <input type="datetime-local" id="japanInput" />
+      <button id="nowBtn">今の時間をセット</button>
+    </div>
+  </div>
+
+  <div class="calendar" id="calendar"></div>
+
+  <script>
+    const icons = {
+      morning: '🌅', day: '☀️', evening: '🌆', night: '🌙'
+    };
+  
+    const langData = {
+      ja: {
+        title: "日本時間 → アメリカ時間",
+        inputLabel: "日本時間を入力：",
+        nowBtn: "今の時間をセット",
+        cities: {
+          "ニューヨーク (東部時間)": "America/New_York", "シカゴ (中部時間)": "America/Chicago",
+          "デンバー (山岳部時間)": "America/Denver", "ロサンゼルス (太平洋時間)": "America/Los_Angeles",
+          "アンカレッジ (アラスカ時間)": "America/Anchorage", "ホノルル (ハワイ時間)": "Pacific/Honolulu"
+        }
+      },
+      en: {
+        title: "Japan Time → US Time",
+        inputLabel: "Enter Japan Time:",
+        nowBtn: "Set Current Time",
+        cities: {
+          "New York (ET)": "America/New_York", "Chicago (CT)": "America/Chicago",
+          "Denver (MT)": "America/Denver", "Los Angeles (PT)": "America/Los_Angeles",
+          "Anchorage (AKT)": "America/Anchorage", "Honolulu (HT)": "Pacific/Honolulu"
+        }
+      }
+    };
+
+    let currentLang = localStorage.getItem("lang") || "ja";
+
+    function getTimeBaseName(hour) {
+      if (hour >= 5 && hour < 12) return "morning";
+      if (hour >= 12 && hour < 18) return "day";
+      if (hour >= 18 && hour < 23) return "evening";
+      return "night";
+    }
+
+    function formatLocalDate(parts) {
+      const { month, day, hour, minute } = parts;
+      if (currentLang === "ja") {
+        return `${Number(month)}月${Number(day)}日 ${hour}:${minute}`;
+      }
+      return `${month}/${day} ${hour}:${minute}`;
+    }
+    
+    function isDST(date, timeZone) {
+        if (timeZone === 'Pacific/Honolulu') return false; 
+        try {
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone,
+                timeZoneName: 'long',
+            });
+            const parts = formatter.formatToParts(date);
+            const tzName = parts.find(p => p.type === 'timeZoneName')?.value || '';
+            return tzName.toLowerCase().includes('daylight');
+        } catch (e) {
+            console.error("DST detection failed for " + timeZone, e);
+            return false;
+        }
+    }
+
+    function updateFromInput() {
+      const inputVal = document.getElementById('japanInput').value;
+      const calendar = document.getElementById('calendar');
+      calendar.innerHTML = '';
+      if (!inputVal) return;
+
+      const instant = japanLocalStringToInstant(inputVal);
+      if (!instant) return;
+
+      const tokyoOffsetMin = getTZOffsetMs('Asia/Tokyo', instant) / 60000;
+      const hourJST = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Tokyo', hour:'2-digit', hour12:false }).format(instant));
+      document.getElementById("inputCard").className = `card-${getTimeBaseName(hourJST)}`;
+
+      for (const [city, tz] of Object.entries(langData[currentLang].cities)) {
+        const fmt = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz, month:'2-digit', day:'2-digit',
+          hour:'2-digit', minute:'2-digit', hour12: false
+        });
+        const parts = fmt.formatToParts(instant).reduce((acc, part) => { if(part.type !== 'literal') acc[part.type] = part.value; return acc; }, {});
+        
+        const hour = Number(parts.hour);
+        const localStr = formatLocalDate(parts);
+        const offsetMin = getTZOffsetMs(tz, instant) / 60000;
+        const diffMin = offsetMin - tokyoOffsetMin;
+        const tName = getTimeBaseName(hour);
+
+        const dstActive = isDST(instant, tz);
+        const dstHtml = dstActive ? `<span class="dst-indicator">DST</span>` : '';
+
+        const card = document.createElement("div");
+        card.className = `card card-${tName}`;
+        card.innerHTML = `
+          <div class="city">${city}</div>
+          <div class="time-wrapper">
+            <span class="time-icon">${icons[tName]}</span>
+            <span class="localtime time-${tName}">${localStr}</span>
+            <span class="diff">(${formatDiffMinutes(diffMin)})</span>
+            ${dstHtml}
+          </div>`;
+        calendar.appendChild(card);
+      }
+    }
+
+    function japanLocalStringToInstant(inputStr) {
+      if (!inputStr) return null;
+      const [y, m, d, hh, mm] = inputStr.split(/[-T:]/).map(Number);
+      return new Date(Date.UTC(y, m - 1, d, hh, mm) - (9 * 60 * 60 * 1000));
+    }
+    
+    function getTZOffsetMs(timeZone, date) {
+        const dateString = new Intl.DateTimeFormat('en-US', {
+            timeZone,
+            timeZoneName: 'longOffset',
+        }).format(date);
+        const offsetString = dateString.split('GMT')[1];
+        if (!offsetString) {
+            if(timeZone === 'Pacific/Honolulu') return -10 * 3600 * 1000;
+            return 0;
+        }
+        const [hours, minutes] = offsetString.split(':').map(Number);
+        const sign = hours < 0 || Object.is(hours, -0) ? -1 : 1;
+        return (Math.abs(hours) * 3600 + (minutes || 0) * 60) * 1000 * sign;
+    }
+    
+    function formatDiffMinutes(diffMinutes) {
+      const sign = diffMinutes >= 0 ? "+" : "-";
+      const abs = Math.abs(diffMinutes);
+      const h = Math.floor(abs / 60);
+      const m = abs % 60;
+      return m === 0 ? `${sign}${h}h` : `${sign}${h}h ${m}m`;
+    }
+
+    function setNowJSTToInput() {
+      const now = new Date();
+      const nowJST = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+      const pad = n => String(n).padStart(2, "0");
+      const y = nowJST.getUTCFullYear();
+      const m = pad(nowJST.getUTCMonth() + 1);
+      const d = pad(nowJST.getUTCDate());
+      const hh = pad(nowJST.getUTCHours());
+      const mm = pad(nowJST.getUTCMinutes());
+      document.getElementById("japanInput").value = `${y}-${m}-${d}T${hh}:${mm}`;
+      updateFromInput();
+    }
+
+    function switchLang(lang) {
+      currentLang = lang;
+      localStorage.setItem("lang", lang);
+      document.getElementById("pageTitle").textContent = langData[currentLang].title;
+      document.querySelector("label[for='japanInput']").firstChild.textContent = langData[currentLang].inputLabel;
+      document.getElementById("nowBtn").textContent = langData[currentLang].nowBtn;
+      updateFromInput();
+      document.getElementById("btn-ja").classList.toggle("active", lang === "ja");
+      document.getElementById("btn-en").classList.toggle("active", lang === "en");
+    }
+
+    // --- Event Listeners & Initializers ---
+    const themeBtn = document.getElementById('theme-btn');
+    document.getElementById("nowBtn").addEventListener("click", setNowJSTToInput);
+    document.getElementById("japanInput").addEventListener("change", updateFromInput);
+    document.getElementById("btn-ja").addEventListener("click", () => switchLang("ja"));
+    document.getElementById("btn-en").addEventListener("click", () => switchLang("en"));
+    
+    themeBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDarkMode = document.body.classList.contains('dark-mode');
+      localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+      themeBtn.textContent = isDarkMode ? '☀️' : '🌙';
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeBtn.textContent = '☀️';
+      } else {
+        themeBtn.textContent = '🌙';
+      }
+      switchLang(currentLang);
+      setNowJSTToInput();
+    });
+  </script>
+</body>
+</html>
